@@ -1,0 +1,28 @@
+{
+  "name": "static_serve",
+  "version": "0.0.1",
+  "description": "static server middleware",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/nathanfaucett/static_serve.git"
+  },
+  "main": "src/index.js",
+  "keywords": [
+    "static_serve",
+    "static_serve.js",
+    "server",
+    "static"
+  ],
+  "author": "Nathan Faucett",
+  "license": "BSD-2-Clause",
+  "readmeFilename": "README.md",
+  "devDependencies": {
+    "grunt": "",
+    "grunt-jsbeautifier": ""
+  },
+  "dependencies": {
+    "file_path": "nathanfaucett/file_path",
+    "http_error": "nathanfaucett/http_error"
+  }
+}
+
