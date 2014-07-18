@@ -22,8 +22,7 @@
   },
   "dependencies": {
     "file_path": "nathanfaucett/file_path",
-    "http_error": "nathanfaucett/http_error",
-    "mime": "nathanfaucett/mime"
+    "http_error": "nathanfaucett/http_error"
   }
 }
 
