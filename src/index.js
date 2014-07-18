@@ -20,7 +20,7 @@ function StaticServe(opts) {
     this.directory = opts.directory || "./app/assets";
     this.fullDirectory = filePath.join(process.cwd(), this.directory);
 
-    this.index = opts.index || "index.html";
+    this.index = opts.index != null ? opts.index : "index.html";
 
     this.options = {
         maxAge: opts.maxAge || 86400000,
@@ -58,6 +58,10 @@ StaticServe.prototype.middleware = function(req, res, next) {
         }
 
         if (stat.isDirectory()) {
+            if (!_this.index) {
+                next();
+                return;
+            }
             fileName = filePath.join(fileName, _this.index);
 
             fs.stat(fileName, function(err, stat) {
@@ -74,36 +78,57 @@ StaticServe.prototype.middleware = function(req, res, next) {
     });
 };
 
-StaticServe.prototype.send = function(res, fileName, stat, callback) {
+StaticServe.prototype.send = function(res, fileName, stat, next) {
     var app = res.app,
+        isHead = res.request.method === "HEAD",
         opts = this.options,
-        modified = false;
+        modified = res.modified(stat.mtime),
+        ext = filePath.ext(fileName),
+        type = app.mime.lookUpType(ext, opts.fallback),
+        modified, stream;
 
-    fs.readFile(fileName, function(err, buffer) {
-        if (err) {
-            callback(new HttpError(err));
-            return;
+    if (type) {
+        modified = res.modified(stat.mtime);
+
+        res.contentType = type;
+        res.statusCode = modified ? 200 : 304;
+
+        if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
+        if (modified && opts.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", stat.mtime.toUTCString());
+        if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", 'W/"' + app.get("etag fn")(this.etag(fileName, stat)) + '"');
+        if (!res.getHeader("Date")) res.setHeader("Date", new Date().toUTCString());
+
+        if (isHead) {
+            res.setHeader("Content-Length", 0);
+            res.end();
+            next();
+        } else {
+            res.setHeader("Content-Length", stat.size);
+
+            stream = fs.createReadStream(fileName);
+
+            stream.on("error", function(err) {
+                if (res.sent) {
+                    console.log(err.stack);
+                    res.request.destroy();
+                    stream.destroy();
+                }
+            });
+
+            stream.on("open", function() {
+                stream.pipe(res);
+            });
         }
-        var ext = filePath.ext(fileName),
-            type = app.mime.lookUpType(ext, opts.fallback);
-
-        if (type) {
-            modified = res.modified(stat.mtime);
-
-            res.contentType = type;
-            if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
-            if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", '"' + app.get("etag fn")(buffer) + '"');
-            if (modified && opts.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", new Date(stat.mtime));
-
-            res.send(modified ? 200 : 304, buffer);
-            callback();
-            return;
-        }
-
-        callback(new HttpError(415, ext));
-    });
+    } else {
+        next(new HttpError(415));
+    }
 
     return this;
+};
+
+StaticServe.prototype.etag = function(fileName, stat) {
+
+    return String(stat.mtime.getTime()) + ':' + String(stat.size) + ':' + fileName;
 };
 
 
