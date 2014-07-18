@@ -90,7 +90,7 @@ StaticServe.prototype.send = function(res, fileName, stat, callback) {
         if (type) {
             modified = res.modified(stat.mtime);
 
-            res.contentLength = type;
+            res.contentType = type;
             if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
             if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", '"' + app.get("etag fn")(buffer) + '"');
             if (modified && opts.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", new Date(stat.mtime));
