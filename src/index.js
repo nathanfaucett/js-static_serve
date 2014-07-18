@@ -4,14 +4,23 @@ var fs = require("fs"),
     filePath = require("file_path");
 
 
+function normalizeRoot(root) {
+    if (!root || root === ".") return "/";
+    if (root[0] === ".") root = root.slice(1);
+    if (root[0] !== "/") root = "/" + root;
+    if (root[root.length - 1] !== "/") root += "/";
+    return root;
+}
+
+
 function StaticServe(opts) {
     opts || (opts = {});
 
-    this.root = this.normalizePath(opts.root || "/");
+    this.root = normalizeRoot(opts.root || "assets");
     this.rootLength = this.root.length;
 
-    this.directory = this.normalizePath(opts.directory || "./");
-    this.fullDirectory = filePath.join(cwd, directory);
+    this.directory = opts.directory || "./app/assets";
+    this.fullDirectory = filePath.join(process.cwd(), this.directory);
 
     this.index = opts.index || "index.html";
 
@@ -22,16 +31,9 @@ function StaticServe(opts) {
     };
 }
 
-StaticServe.prototype.normalizePath = function(path) {
-    if (!path || typeof(path) !== "string") return ".";
-    if (path === "/") return path;
-    if (path[0] === "/") path = path.substr(1);
-    if (path[path.length] === "/") path = path.substr(0, path.length);
-    return path;
-};
-
 StaticServe.prototype.middleware = function(req, res, next) {
-    var method = req.method,
+    var _this = this,
+        method = req.method,
         url = req.url,
         fileName;
 
@@ -44,7 +46,7 @@ StaticServe.prototype.middleware = function(req, res, next) {
         return;
     }
 
-    fileName = filePath.join(fullDirectory, url.substring(this.rootLength));
+    fileName = filePath.join(this.fullDirectory, url.substring(this.rootLength));
 
     fs.stat(fileName, function(err, stat) {
         if (!stat) {
@@ -56,7 +58,7 @@ StaticServe.prototype.middleware = function(req, res, next) {
             return;
         }
         if (stat.isDirectory()) {
-            fileName = filePath.join(fileName, this.index);
+            fileName = filePath.join(fileName, _this.index);
 
             fs.stat(fileName, function(err, stat) {
                 if (err || !stat) {
@@ -64,7 +66,7 @@ StaticServe.prototype.middleware = function(req, res, next) {
                     return;
                 }
 
-                res.sendFile(fileName, this.options, function(err) {
+                res.sendFile(fileName, _this.options, function(err) {
                     if (err) {
                         next(err);
                         return;
@@ -74,7 +76,7 @@ StaticServe.prototype.middleware = function(req, res, next) {
                 });
             });
         } else {
-            res.sendFile(fileName, this.options, function(err) {
+            res.sendFile(fileName, _this.options, function(err) {
                 if (err) {
                     next(err);
                     return;
