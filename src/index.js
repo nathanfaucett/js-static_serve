@@ -1,8 +1,7 @@
 var fs = require("fs"),
 
     HttpError = require("http_error"),
-    filePath = require("file_path"),
-    mime = require("mime");
+    filePath = require("file_path");
 
 function normalizeRoot(root) {
     if (!root || root === ".") return "/";
@@ -25,8 +24,9 @@ function StaticServe(opts) {
 
     this.options = {
         maxAge: opts.maxAge || 86400000,
-        fallback: opts.fallback != null ? !!opts.fallback : true,
-        etag: opts.etag != null ? !!opts.etag : true
+        fallback: opts.fallback != null ? !!opts.fallback : false,
+        etag: opts.etag != null ? !!opts.etag : true,
+        lastModified: opts.lastModified != null ? !!opts.lastModified : true
     };
 }
 
@@ -48,14 +48,15 @@ StaticServe.prototype.middleware = function(req, res, next) {
     fileName = filePath.join(this.fullDirectory, url.substring(this.rootLength));
 
     fs.stat(fileName, function(err, stat) {
-        if (!stat) {
-            next();
-            return;
-        }
         if (err) {
             next(new HttpError(404, err));
             return;
         }
+        if (!stat) {
+            next();
+            return;
+        }
+
         if (stat.isDirectory()) {
             fileName = filePath.join(fileName, _this.index);
 
@@ -65,17 +66,18 @@ StaticServe.prototype.middleware = function(req, res, next) {
                     return;
                 }
 
-                _this.send(res, fileName, next);
+                _this.send(res, fileName, stat, next);
             });
         } else {
-            _this.send(res, fileName, next);
+            _this.send(res, fileName, stat, next);
         }
     });
 };
 
-StaticServe.prototype.send = function(res, fileName, callback) {
+StaticServe.prototype.send = function(res, fileName, stat, callback) {
     var app = res.app,
-        opts = this.options;
+        opts = this.options,
+        modified = false;
 
     fs.readFile(fileName, function(err, buffer) {
         if (err) {
@@ -83,14 +85,17 @@ StaticServe.prototype.send = function(res, fileName, callback) {
             return;
         }
         var ext = filePath.ext(fileName),
-            type = mime.lookUpType(ext, opts.fallback);
+            type = app.mime.lookUpType(ext, opts.fallback);
 
         if (type) {
+            modified = res.modified(stat.mtime);
+
             res.contentLength = type;
             if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
             if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", '"' + app.get("etag fn")(buffer) + '"');
+            if (modified && opts.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", new Date(stat.mtime));
 
-            res.send(200, buffer);
+            res.send(modified ? 200 : 304, buffer);
             callback();
             return;
         }
