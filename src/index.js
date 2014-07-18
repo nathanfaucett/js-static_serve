@@ -1,8 +1,8 @@
 var fs = require("fs"),
 
     HttpError = require("http_error"),
-    filePath = require("file_path");
-
+    filePath = require("file_path"),
+    mime = require("mime");
 
 function normalizeRoot(root) {
     if (!root || root === ".") return "/";
@@ -11,7 +11,6 @@ function normalizeRoot(root) {
     if (root[root.length - 1] !== "/") root += "/";
     return root;
 }
-
 
 function StaticServe(opts) {
     opts || (opts = {});
@@ -66,26 +65,40 @@ StaticServe.prototype.middleware = function(req, res, next) {
                     return;
                 }
 
-                res.sendFile(fileName, _this.options, function(err) {
-                    if (err) {
-                        next(err);
-                        return;
-                    }
-
-                    next();
-                });
+                _this.send(res, fileName, next);
             });
         } else {
-            res.sendFile(fileName, _this.options, function(err) {
-                if (err) {
-                    next(err);
-                    return;
-                }
-
-                next();
-            });
+            _this.send(res, fileName, next);
         }
     });
+};
+
+StaticServe.prototype.send = function(res, fileName, callback) {
+    var app = res.app,
+        opts = this.options;
+
+    fs.readFile(fileName, function(err, buffer) {
+        if (err) {
+            callback(new HttpError(err));
+            return;
+        }
+        var ext = filePath.ext(fileName),
+            type = mime.lookUpType(ext, opts.fallback);
+
+        if (type) {
+            res.contentLength = type;
+            if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
+            if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", '"' + app.get("etag fn")(buffer) + '"');
+
+            res.send(200, buffer);
+            callback();
+            return;
+        }
+
+        callback(new HttpError(415, ext));
+    });
+
+    return this;
 };
 
 
