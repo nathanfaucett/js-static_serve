@@ -33,19 +33,19 @@ function StaticServe(opts) {
 StaticServe.prototype.middleware = function(req, res, next) {
     var _this = this,
         method = req.method,
-        url = req.url,
+        pathname = req.pathname,
         fileName;
 
     if (method !== "GET" && method !== "HEAD") {
         next();
         return;
     }
-    if (url.indexOf(this.root) !== 0) {
+    if (pathname.indexOf(this.root) !== 0) {
         next();
         return;
     }
 
-    fileName = filePath.join(this.fullDirectory, url.substring(this.rootLength));
+    fileName = filePath.join(this.fullDirectory, pathname.substring(this.rootLength));
 
     fs.stat(fileName, function(err, stat) {
         if (err) {
