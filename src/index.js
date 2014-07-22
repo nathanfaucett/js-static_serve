@@ -108,9 +108,8 @@ StaticServe.prototype.send = function(res, fileName, stat, next) {
             stream = fs.createReadStream(fileName);
 
             stream.on("error", function(err) {
-                if (res.sent) {
+                if (res.headersSent) {
                     console.log(err.stack);
-                    res.request.destroy();
                     stream.destroy();
                 }
             });
