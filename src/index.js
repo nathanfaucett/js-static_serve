@@ -49,11 +49,7 @@ StaticServe.prototype.middleware = function(req, res, next) {
 
     fs.stat(fileName, function(err, stat) {
         if (err) {
-            if (err.code === "ENOENT") {
-                next();
-            } else {
-                next(new HttpError(404, err));
-            }
+            next(new HttpError(404, err));
             return;
         }
         if (!stat) {
