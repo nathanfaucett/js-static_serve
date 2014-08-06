@@ -1,7 +1,9 @@
 var fs = require("fs"),
+    debug = require("debug"),
 
     HttpError = require("http_error"),
     filePath = require("file_path");
+
 
 function normalizeRoot(root) {
     if (!root || root === ".") return "/";
@@ -10,6 +12,7 @@ function normalizeRoot(root) {
     if (root[root.length - 1] !== "/") root += "/";
     return root;
 }
+
 
 function StaticServe(opts) {
     opts || (opts = {});
@@ -22,6 +25,8 @@ function StaticServe(opts) {
 
     this.index = opts.index != null ? opts.index : "index.html";
 
+    this.debug = debug("Static Serve");
+
     this.options = {
         maxAge: opts.maxAge || 86400000,
         fallback: opts.fallback != null ? !!opts.fallback : false,
@@ -30,10 +35,22 @@ function StaticServe(opts) {
     };
 }
 
+StaticServe.express = function(opts) {
+    var staticServe = new StaticServe(opts);
+
+    return function(req, res, next) {
+
+        staticServe.middleware(req, res, next);
+    };
+};
+
+StaticServe.connect = StaticServe.express;
+
 StaticServe.prototype.middleware = function(req, res, next) {
     var _this = this,
         method = req.method,
         pathname = req.pathname,
+        relativeName,
         fileName;
 
     if (method !== "GET" && method !== "HEAD") {
@@ -45,7 +62,8 @@ StaticServe.prototype.middleware = function(req, res, next) {
         return;
     }
 
-    fileName = filePath.join(this.fullDirectory, pathname.substring(this.rootLength));
+    relativeName = pathname.substring(this.rootLength);
+    fileName = filePath.join(this.fullDirectory, relativeName);
 
     fs.stat(fileName, function(err, stat) {
         if (err) {
@@ -62,7 +80,9 @@ StaticServe.prototype.middleware = function(req, res, next) {
                 next();
                 return;
             }
-            fileName = filePath.join(fileName, _this.index);
+
+            relativeName = _this.index;
+            fileName = filePath.join(fileName, relativeName);
 
             fs.stat(fileName, function(err, stat) {
                 if (err || !stat) {
@@ -70,15 +90,15 @@ StaticServe.prototype.middleware = function(req, res, next) {
                     return;
                 }
 
-                _this.send(res, fileName, stat, next);
+                _this.send(res, relativeName, fileName, stat, next);
             });
         } else {
-            _this.send(res, fileName, stat, next);
+            _this.send(res, relativeName, fileName, stat, next);
         }
     });
 };
 
-StaticServe.prototype.send = function(res, fileName, stat, next) {
+StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
     var app = res.app,
         isHead = res.request.method === "HEAD",
         opts = this.options,
@@ -99,10 +119,14 @@ StaticServe.prototype.send = function(res, fileName, stat, next) {
         if (!res.getHeader("Date")) res.setHeader("Date", new Date().toUTCString());
 
         if (isHead) {
+            this.debug("HEAD " + relativeName + " as " + type);
+
             res.setHeader("Content-Length", 0);
             res.end();
             next();
         } else {
+            this.debug(relativeName + " as " + type);
+
             res.setHeader("Content-Length", stat.size);
 
             stream = fs.createReadStream(fileName);

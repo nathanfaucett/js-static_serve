@@ -21,8 +21,8 @@
     "grunt-jsbeautifier": ""
   },
   "dependencies": {
+    "debug": "^1.0.4",
     "file_path": "nathanfaucett/file_path",
     "http_error": "nathanfaucett/http_error"
   }
 }
-
