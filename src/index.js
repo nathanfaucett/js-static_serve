@@ -21,7 +21,7 @@ function StaticServe(opts) {
     this.rootLength = this.root.length;
 
     this.directory = opts.directory || "./app/assets";
-    this.fullDirectory = filePath.join(process.cwd(), this.directory);
+    this.fullDirectory = filePath.isAbsolute(this.directory) ? this.directory : filePath.join(process.cwd(), this.directory);
 
     this.index = opts.index != null ? opts.index : "index.html";
 
