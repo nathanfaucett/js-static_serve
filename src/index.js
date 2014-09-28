@@ -102,7 +102,6 @@ StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
     var app = res.app,
         isHead = res.request.method === "HEAD",
         opts = this.options,
-        modified = res.modified(stat.mtime),
         ext = filePath.ext(fileName),
         type = app.mime.lookUpType(ext, opts.fallback),
         modified, stream;
