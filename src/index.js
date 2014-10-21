@@ -119,10 +119,18 @@ StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
         res.contentType = type;
         res.statusCode = modified ? 200 : 304;
 
-        if (options.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (options.maxAge / 1000));
-        if (modified && options.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", stat.mtime.toUTCString());
-        if (options.etag && !res.getHeader("ETag")) res.setHeader("ETag", 'W/"' + this.etagFn(this.etag(fileName, stat)) + '"');
-        if (!res.getHeader("Date")) res.setHeader("Date", new Date().toUTCString());
+        if (options.maxAge && !res.getHeader("Cache-Control")) {
+            res.setHeader("Cache-Control", "public, max-age=" + (options.maxAge / 1000));
+        }
+        if (modified && options.lastModified && !res.getHeader("Last-Modified")) {
+            res.setHeader("Last-Modified", stat.mtime.toUTCString());
+        }
+        if (options.etag && !res.getHeader("ETag")) {
+            res.setHeader("ETag", 'W/"' + this.etagFn(this.etag(fileName, stat)) + '"');
+        }
+        if (!res.getHeader("Date")) {
+            res.setHeader("Date", new Date().toUTCString());
+        }
 
         if (isHead) {
             this.debug("HEAD " + relativeName + " as " + type);
