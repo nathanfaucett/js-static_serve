@@ -1,6 +1,8 @@
 var fs = require("fs"),
     debug = require("debug"),
 
+    mime = require("mime"),
+    crypto = require("crypto"),
     HttpError = require("http_error"),
     filePath = require("file_path");
 
@@ -13,30 +15,36 @@ function normalizeRoot(root) {
     return root;
 }
 
+function etagFn(buffer) {
 
-function StaticServe(opts) {
-    opts || (opts = {});
+    return crypto.createHash("md5").update(buffer).digest("base64");
+}
 
-    this.root = normalizeRoot(opts.root || "assets");
+function StaticServe(options) {
+    options || (options = {});
+
+    this.root = normalizeRoot(options.root || "assets");
     this.rootLength = this.root.length;
 
-    this.directory = opts.directory || "./app/assets";
+    this.directory = options.directory || "./assets";
     this.fullDirectory = filePath.isAbsolute(this.directory) ? this.directory : filePath.join(process.cwd(), this.directory);
 
-    this.index = opts.index != null ? opts.index : "index.html";
+    this.index = options.index != null ? options.index : "index.html";
 
     this.debug = debug("Static Serve");
 
+    this.etagFn = typeof(options.etagFn) === "function" ? options.etagFn : etagFn;
+
     this.options = {
-        maxAge: opts.maxAge || 86400000,
-        fallback: opts.fallback != null ? !!opts.fallback : false,
-        etag: opts.etag != null ? !!opts.etag : true,
-        lastModified: opts.lastModified != null ? !!opts.lastModified : true
+        maxAge: options.maxAge || 86400000,
+        fallback: options.fallback != null ? !!options.fallback : false,
+        etag: options.etag != null ? !!options.etag : true,
+        lastModified: options.lastModified != null ? !!options.lastModified : true
     };
 }
 
-StaticServe.express = function(opts) {
-    var staticServe = new StaticServe(opts);
+StaticServe.express = function(options) {
+    var staticServe = new StaticServe(options);
 
     return function(req, res, next) {
 
@@ -99,11 +107,10 @@ StaticServe.prototype.middleware = function(req, res, next) {
 };
 
 StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
-    var app = res.app,
-        isHead = res.request.method === "HEAD",
-        opts = this.options,
+    var isHead = res.request.method === "HEAD",
+        options = this.options,
         ext = filePath.ext(fileName),
-        type = app.mime.lookUpType(ext, opts.fallback),
+        type = mime.lookUpType(ext, options.fallback),
         modified, stream;
 
     if (type) {
@@ -112,9 +119,9 @@ StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
         res.contentType = type;
         res.statusCode = modified ? 200 : 304;
 
-        if (opts.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (opts.maxAge / 1000));
-        if (modified && opts.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", stat.mtime.toUTCString());
-        if (opts.etag && !res.getHeader("ETag")) res.setHeader("ETag", 'W/"' + app.get("etag fn")(this.etag(fileName, stat)) + '"');
+        if (options.maxAge && !res.getHeader("Cache-Control")) res.setHeader("Cache-Control", "public, max-age=" + (options.maxAge / 1000));
+        if (modified && options.lastModified && !res.getHeader("Last-Modified")) res.setHeader("Last-Modified", stat.mtime.toUTCString());
+        if (options.etag && !res.getHeader("ETag")) res.setHeader("ETag", 'W/"' + this.etagFn(this.etag(fileName, stat)) + '"');
         if (!res.getHeader("Date")) res.setHeader("Date", new Date().toUTCString());
 
         if (isHead) {
