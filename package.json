@@ -14,16 +14,17 @@
     "static"
   ],
   "author": "Nathan Faucett",
-  "license": "BSD-2-Clause",
+  "license": "MIT",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "grunt": "",
-    "grunt-contrib-jshint": "^0.10.0",
-    "grunt-jsbeautifier": ""
+    "grunt": "^0.4.5",
+    "grunt-contrib-jshint": "^0.11.3",
+    "grunt-jsbeautifier": "^0.2.10"
   },
   "dependencies": {
-    "debug": "^1.0.4",
-    "file_path": "nathanfaucett/file_path",
-    "http_error": "nathanfaucett/http_error"
+    "debug": "^2.2.0",
+    "file_path": "git://github.com/nathanfaucett/file_path.git",
+    "http_error": "git://github.com/nathanfaucett/http_error.git",
+    "mime": "git://github.com/nathanfaucett/mime.git"
   }
 }

@@ -1,32 +1,38 @@
 var fs = require("fs"),
-    debug = require("debug"),
-
-    mime = require("mime"),
     crypto = require("crypto"),
+    debug = require("debug"),
+    mime = require("mime"),
     HttpError = require("http_error"),
     filePath = require("file_path");
 
 
 function normalizeRoot(root) {
-    if (!root || root === ".") return "/";
-    if (root[0] === ".") root = root.slice(1);
-    if (root[0] !== "/") root = "/" + root;
-    if (root[root.length - 1] !== "/") root += "/";
+    if (!root || root === ".") {
+        return "/";
+    }
+    if (root[0] === ".") {
+        root = root.slice(1);
+    }
+    if (root[0] !== "/") {
+        root = "/" + root;
+    }
+    if (root[root.length - 1] !== "/") {
+        root += "/";
+    }
     return root;
 }
 
 function etagFn(buffer) {
-
     return crypto.createHash("md5").update(buffer).digest("base64");
 }
 
 function StaticServe(options) {
-    options || (options = {});
+    options = options || {};
 
-    this.root = normalizeRoot(options.root || "assets");
+    this.root = normalizeRoot(options.root || "app");
     this.rootLength = this.root.length;
 
-    this.directory = options.directory || "./assets";
+    this.directory = options.directory || "./app";
     this.fullDirectory = filePath.isAbsolute(this.directory) ? this.directory : filePath.join(process.cwd(), this.directory);
 
     this.index = options.index != null ? options.index : "index.html";
@@ -47,7 +53,6 @@ StaticServe.express = function(options) {
     var staticServe = new StaticServe(options);
 
     return function(req, res, next) {
-
         staticServe.middleware(req, res, next);
     };
 };
@@ -164,7 +169,6 @@ StaticServe.prototype.send = function(res, relativeName, fileName, stat, next) {
 };
 
 StaticServe.prototype.etag = function(fileName, stat) {
-
     return String(stat.mtime.getTime()) + ':' + String(stat.size) + ':' + fileName;
 };
 
