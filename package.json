@@ -1,5 +1,5 @@
 {
-  "name": "static_serve",
+  "name": "@nathanfaucett/static_serve",
   "version": "0.0.1",
   "description": "static server middleware",
   "repository": {
@@ -17,14 +17,14 @@
   "license": "MIT",
   "readmeFilename": "README.md",
   "devDependencies": {
-    "grunt": "^0.4.5",
-    "grunt-contrib-jshint": "^0.11.3",
-    "grunt-jsbeautifier": "^0.2.10"
+    "grunt": "^1.0.1",
+    "grunt-contrib-jshint": "^1.0.0",
+    "grunt-jsbeautifier": "^0.2.13"
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "file_path": "git://github.com/nathanfaucett/file_path.git",
-    "http_error": "git://github.com/nathanfaucett/http_error.git",
-    "mime": "git://github.com/nathanfaucett/mime.git"
+    "@nathanfaucett/file_path": "^0.0.2",
+    "@nathanfaucett/http_error": "^0.0.1",
+    "@nathanfaucett/mime": "^0.0.1"
   }
 }

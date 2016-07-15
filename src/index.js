@@ -1,9 +1,9 @@
 var fs = require("fs"),
-    crypto = require("crypto"),
-    debug = require("debug"),
-    mime = require("mime"),
-    HttpError = require("http_error"),
-    filePath = require("file_path");
+    crypto = require("@nathanfaucett/crypto"),
+    debug = require("@nathanfaucett/debug"),
+    mime = require("@nathanfaucett/mime"),
+    HttpError = require("@nathanfaucett/http_error"),
+    filePath = require("@nathanfaucett/file_path");
 
 
 function normalizeRoot(root) {
