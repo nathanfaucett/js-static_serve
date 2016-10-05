@@ -1,6 +1,6 @@
 {
   "name": "@nathanfaucett/static_serve",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "static server middleware",
   "repository": {
     "type": "git",
@@ -23,8 +23,8 @@
   },
   "dependencies": {
     "debug": "^2.2.0",
-    "@nathanfaucett/file_path": "^0.0.2",
-    "@nathanfaucett/http_error": "^0.0.1",
-    "@nathanfaucett/mime": "^0.0.1"
+    "@nathanfaucett/file_path": "^0.0.4",
+    "@nathanfaucett/http_error": "^0.0.2",
+    "@nathanfaucett/mime": "^0.0.2"
   }
 }
